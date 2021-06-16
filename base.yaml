@@ -1,0 +1,26 @@
+# esphome-version: next
+substitutions:
+  display_name: Smoker
+  device_name: camp_chef
+
+esphome:
+  name: smoker_controller
+  platform: ESP32
+  board: nodemcu-32s
+
+# wifi:
+
+api:
+
+ota:
+
+logger:
+    level: INFO
+
+text_sensor:
+  - platform: version
+    name: "${display_name} - ESPHome Version"
+
+switch:
+  - platform: restart
+    name: "Smoker Restart"

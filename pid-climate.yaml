@@ -1,0 +1,87 @@
+esphome:
+  on_boot:
+    priority: 0
+    then:
+      - climate.control:
+          id: smoker_pid
+          mode: "OFF"
+          target_temperature: 70
+
+climate:
+  - platform: pid
+    id: smoker_pid
+    name: "${display_name} - PID Climate Controller"
+    sensor: smoker_temperature
+    default_target_temperature: 95
+    heat_output: pid_output
+    control_parameters:
+      kp: 0.2
+      ki: 0.0005
+      kd: 1
+      # Initial Calibration
+      # kp: 0.05149
+      # ki: 0.00096
+      # kd: 0.69000
+
+      # Second Calibration
+      # kp: 0.13488
+      # ki: 0.00025
+      # kd: 1.99616
+
+      min_integral: -0.25
+      max_integral: 0.25
+    visual:
+      min_temperature: 70
+      max_temperature: 260
+      temperature_step: 5
+
+
+
+output:
+  - platform: custom
+    type: float
+    lambda: |-
+      auto pid_output = new PidModeFloatOutput();
+      App.register_component(pid_output);
+      return {pid_output};
+
+    outputs:
+      - id: pid_output
+
+sensor:
+  - platform: pid
+    name: "${display_name} - PID Result"
+    type: RESULT
+  - platform: pid
+    name: "${display_name} - PID ERROR"
+    type: ERROR
+  - platform: pid
+    name: "${display_name} - PID PROPORTIONAL"
+    type: PROPORTIONAL
+  - platform: pid
+    name: "${display_name} - PID INTEGRAL"
+    type: INTEGRAL
+  - platform: pid
+    name: "${display_name} - PID DERIVATIVE"
+    type: DERIVATIVE
+  - platform: pid
+    name: "${display_name} - PID HEAT"
+    type: HEAT
+  - platform: pid
+    name: "${display_name} - PID COOL"
+    type: COOL
+  - platform: pid
+    name: "${display_name} - PID KP"
+    unit_of_measurement: ''
+    accuracy_decimals: 5
+    type: KP
+  - platform: pid
+    name: "${display_name} - PID KI"
+    unit_of_measurement: ''
+    accuracy_decimals: 5
+    type: KI
+  - platform: pid
+    name: "${display_name} - PID KD"
+    accuracy_decimals: 5
+    unit_of_measurement: ''
+    type: KD

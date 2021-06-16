@@ -1,0 +1,13 @@
+uart:
+  tx_pin: GPIO15
+  rx_pin: GPIO02
+  baud_rate: 9600
+
+display:
+  - platform: nextion
+    lambda: |-
+      if (id(active_mode).state != "OFF"){
+        it.set_backlight_brightness(100);
+      } else {
+        it.set_backlight_brightness(0);
+      }

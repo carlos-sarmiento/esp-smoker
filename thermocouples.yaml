@@ -1,0 +1,41 @@
+esphome:
+  includes:
+    - sen30008/sen30008.h
+    - sen30008/PlayingWithFusion_MAX31856.h
+    - sen30008/PlayingWithFusion_MAX31856.cpp
+    - sen30008/PlayingWithFusion_MAX31856_STRUCT.h
+
+sensor:
+  - platform: custom
+    lambda: |-
+      auto sen30008 = new SEN30008Device(25, 26, 27, 33, 32, 22, 23); // (sck, miso, mosi, tc_0, tc_1, tc_2, tc_3)
+      App.register_component(sen30008);
+      return {sen30008->internal_temp, sen30008->tc_0, sen30008->tc_1, sen30008->tc_2, sen30008->tc_3};
+
+    sensors:
+      - name: "${display_name} - SEN-30008 Internal Temp"
+        unit_of_measurement: °C
+        id: smoker_cold_junction
+        accuracy_decimals: 1
+
+      - name: "${display_name} - Temperature" # TC_0
+        id: smoker_temperature
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+        on_value:
+          then:
+            - lambda: |-
+                onSmokerTemperatureUpdate(x);
+
+      - name: "${display_name} - Left Thermocouple" # TC_1
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+
+      - name: "${display_name} - Right Thermocouple" # TC_2
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+
+      - name: "${display_name} - Looped Thermocouple" # TC_3
+        # internal: yes
+        unit_of_measurement: °C
+        accuracy_decimals: 1

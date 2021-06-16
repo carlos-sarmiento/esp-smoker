@@ -1,0 +1,30 @@
+# sensor:
+#   - platform: template
+#     name: "${display_name} - Debug Smoker Temperature"
+#     id: smoker_temperature
+#     on_value:
+#       then:
+#         - lambda: |-
+#             onSmokerTemperatureUpdate(x);
+          
+# switch:
+#   - platform: template
+#     name: "${display_name} - Debug High Temp"
+#     turn_on_action:
+#       - sensor.template.publish:
+#           id: smoker_temperature
+#           state: 120.0 
+
+#   - platform: template
+#     name: "${display_name} - Debug Flameout Temp"
+#     turn_on_action:
+#       - sensor.template.publish:
+#           id: smoker_temperature
+#           state: 50.0
+
+#   - platform: template
+#     name: "${display_name} - Debug Steady Temp"
+#     turn_on_action:
+#       - sensor.template.publish:
+#           id: smoker_temperature
+#           state: 90.0 

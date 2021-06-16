@@ -1,0 +1,106 @@
+esphome:
+  includes:
+    - smoker.h
+    - climate-public.h
+  on_boot:
+    priority: 0 
+    then:
+      - text_sensor.template.publish:
+          id: active_mode
+          state: "OFF"
+
+climate:
+  - platform: custom
+    lambda: |-
+      auto my_custom_climate = new SmokerController();
+      App.register_component(my_custom_climate);
+      return {my_custom_climate};
+
+    climates:
+      - name: "Smoker Control"
+        internal: no
+        id: smoker_control
+        visual:
+          min_temperature: 70
+          max_temperature: 260
+          temperature_step: 5
+
+text_sensor:
+  - platform: template
+    name: "${display_name} - Active Mode"
+    id: active_mode
+    internal: no
+    on_value:
+      then:
+        - lambda: |-
+            onActiveModeUpdate(x);
+
+binary_sensor:
+  - platform: template
+    name: "${display_name} - Flameout Watch Enabled"
+    id: flameout_watch
+  - platform: template
+    name: "${display_name} - General Timer Enabled"
+    id: general_timer_enabled
+
+sensor:
+  - platform: uptime
+    name: ${display_name} - Uptime Sensor
+    update_interval: 1s
+  - platform: template
+    name: "${display_name} - Flameout Timer"
+    id: flameout_timer
+    on_value:
+      then:
+        - lambda: |-
+            onFlameoutWatchTimerUpdated();
+
+  - platform: template
+    name: "${display_name} - General Timer"
+    id: general_timer
+    on_value:
+      then:
+        - lambda: |-
+            onGeneralTimerUpdated();
+
+
+time:
+  - platform: sntp
+    id: sntp_time
+    on_time:
+      - cron: "* * * * * *"
+        then:
+          - lambda: |-
+              onClockTick();
+api:
+  services:
+    - service: force_off
+      then:
+        - lambda: |-
+            onForceOff();
+    - service: activate_feed
+      then:
+        - lambda: |-
+            onActivateFeed();
+    - service: activate_bypass 
+      then:
+        - lambda: |-
+            onBypass();
+    - service: pid_autotune 
+      then:
+        - climate.pid.autotune: smoker_pid
+    - service: pid_integral_reset 
+      then:
+        - climate.pid.reset_integral_term: smoker_pid
+
+    - service: set_pid_params
+      variables:
+        kp: float
+        ki: float
+        kd: float
+      then:
+        - climate.pid.set_control_parameters:
+            id: smoker_pid
+            kp: !lambda 'return kp;'
+            ki: !lambda 'return ki;'
+            kd: !lambda 'return kd;'

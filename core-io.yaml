@@ -1,0 +1,37 @@
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO35 
+      inverted: yes
+    name: "${display_name} - Rotary Encoder Click"
+
+sensor:
+  - platform: rotary_encoder
+    name: "${display_name} - Rotary Encoder"
+    pin_a: GPIO39
+    pin_b: GPIO34
+
+output:
+  - platform: slow_pwm
+    pin: 
+      number: GPIO5
+      inverted: yes
+    id: auger_pwm
+    period: 2s
+  - platform: slow_pwm
+    id: blower_pwm
+    pin: 
+      number: GPIO17
+      inverted: yes
+    period: 2s
+  - platform: gpio
+    id: igniter
+    pin: 
+      number: GPIO16
+      inverted: yes
+
+  - platform: gpio
+    id: "unused_relay"
+    pin: 
+      number: GPIO4
+      inverted: yes 

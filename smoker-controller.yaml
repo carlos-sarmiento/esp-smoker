@@ -1,0 +1,145 @@
+# esphome-version: next
+substitutions:
+  display_name: Smoker
+  device_name: camp_chef
+esphome:
+  name: smoker_controller
+  platform: ESP32
+  board: nodemcu-32s
+  on_boot:
+    priority: 0
+    then:
+      - text_sensor.template.publish:
+          id: active_mode
+          state: "OFF"
+  includes:
+    - sen30008/sen30008.h
+    - sen30008/PlayingWithFusion_MAX31856.h
+    - sen30008/PlayingWithFusion_MAX31856.cpp
+    - sen30008/PlayingWithFusion_MAX31856_STRUCT.h
+# wifi:
+api:
+  services:
+    - service: force_off
+      then:
+        - lambda: |-
+            onForceOff();
+    - service: activate_feed
+      then:
+        - lambda: |-
+            onActivateFeed();
+    - service: activate_bypass
+      then:
+        - lambda: |-
+            onBypass();
+    - service: pid_autotune
+      then:
+        - climate.pid.autotune: smoker_pid
+    - service: pid_integral_reset
+      then:
+        - climate.pid.reset_integral_term: smoker_pid
+    - service: set_pid_params
+      variables:
+        kp: float
+        ki: float
+        kd: float
+      then:
+        - climate.pid.set_control_parameters:
+            id: smoker_pid
+            kp: !lambda 'return kp;'
+            ki: !lambda 'return ki;'
+            kd: !lambda 'return kd;'
+ota:
+logger:
+  level: INFO
+text_sensor:
+  - platform: template
+    name: "${display_name} - Active Mode"
+    id: active_mode
+    internal: no
+    on_value:
+      then:
+        - lambda: |-
+            onActiveModeUpdate(x);
+switch:
+  - platform: restart
+    name: "Smoker Restart"
+binary_sensor:
+  - platform: template
+    name: "${display_name} - Flameout Watch Enabled"
+    id: flameout_watch
+  - platform: template
+    name: "${display_name} - General Timer Enabled"
+    id: general_timer_enabled
+sensor:
+  - platform: custom
+    lambda: |-
+      auto sen30008 = new SEN30008Device(25, 26, 27, 33, 32, 22, 23); // (sck, miso, mosi, tc_0, tc_1, tc_2, tc_3)
+      App.register_component(sen30008);
+      return {sen30008->internal_temp, sen30008->tc_0, sen30008->tc_1, sen30008->tc_2, sen30008->tc_3};
+    sensors:
+      - name: "${display_name} - SEN-30008 Internal Temp"
+        unit_of_measurement: °C
+        id: smoker_cold_junction
+        accuracy_decimals: 1
+      - name: "${display_name} - Temperature" # TC_0
+        id: smoker_temperature
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+        on_value:
+          then:
+            - lambda: |-
+                onSmokerTemperatureUpdate(x);
+      - name: "${display_name} - Left Thermocouple" # TC_1
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+      - name: "${display_name} - Right Thermocouple" # TC_2
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+      - name: "${display_name} - Looped Thermocouple" # TC_3
+        # internal: yes
+        unit_of_measurement: °C
+        accuracy_decimals: 1
+output:
+  - platform: custom
+    type: float
+    lambda: |-
+      auto pid_output = new PidModeFloatOutput();
+      App.register_component(pid_output);
+      return {pid_output};
+    outputs:
+      - id: pid_output
+climate:
+  - platform: custom
+    lambda: |-
+      auto my_custom_climate = new SmokerController();
+      App.register_component(my_custom_climate);
+      return {my_custom_climate};
+    climates:
+      - name: "Smoker Control"
+        internal: no
+        id: smoker_control
+        visual:
+          min_temperature: 70
+          max_temperature: 260
+          temperature_step: 5
+time:
+  - platform: sntp
+    id: sntp_time
+    on_time:
+      - cron: "* * * * * *"
+        then:
+          - lambda: |-
+              onClockTick();
+uart:
+  tx_pin: GPIO15
+  rx_pin: GPIO02
+  baud_rate: 9600
+display:
+  - platform: nextion
+    lambda: |-
+      if (id(active_mode).state != "OFF"){
+        it.set_backlight_brightness(100);
+      } else {
+        it.set_backlight_brightness(0);
+      }
